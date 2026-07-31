@@ -12,8 +12,12 @@ const FLOATERS = [
   { e: "🛒", cls: "right-[28%] top-[12%] text-xl ad-300" },
 ];
 
+type Mode = "signin" | "signup";
+
 export default function LoginPage() {
   const router = useRouter();
+  const [mode, setMode] = useState<Mode>("signin");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -23,14 +27,14 @@ export default function LoginPage() {
     setBusy(true);
     setError("");
     try {
-      const res = await fetch("/api/auth", {
+      const res = await fetch(mode === "signin" ? "/api/auth" : "/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ username, password }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        setError(body?.error ?? "Login failed");
+        setError(body?.error ?? "Something went wrong");
         return;
       }
       const from = new URLSearchParams(window.location.search).get("from");
@@ -69,14 +73,32 @@ export default function LoginPage() {
 
       <form onSubmit={submit} className="card w-full space-y-3">
         <div>
+          <label className="label" htmlFor="username">
+            👤 Username
+          </label>
+          <input
+            id="username"
+            type="text"
+            autoComplete="username"
+            required
+            minLength={3}
+            maxLength={30}
+            placeholder="Enter your username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            className="input py-3"
+          />
+        </div>
+        <div>
           <label className="label" htmlFor="password">
             🔐 Password
           </label>
           <input
             id="password"
             type="password"
-            autoComplete="current-password"
+            autoComplete={mode === "signin" ? "current-password" : "new-password"}
             required
+            minLength={4}
             placeholder="Enter your password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -85,7 +107,20 @@ export default function LoginPage() {
         </div>
         {error && <p className="text-xs font-medium text-red-500">{error}</p>}
         <button type="submit" disabled={busy} className="btn-primary">
-          {busy ? "Unlocking…" : "Unlock ✨"}
+          {busy ? "Please wait…" : mode === "signin" ? "Log in ✨" : "Create account ✨"}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setMode((m) => (m === "signin" ? "signup" : "signin"));
+            setError("");
+          }}
+          className="w-full text-center text-xs font-medium text-indigo-600 hover:text-indigo-700"
+        >
+          {mode === "signin"
+            ? "New here? Create an account"
+            : "Already have an account? Log in"}
         </button>
       </form>
     </div>

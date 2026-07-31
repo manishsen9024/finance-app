@@ -21,11 +21,11 @@ function toDate(value: unknown): string {
 
 // ---------------- Profile ----------------
 
-export async function getProfile(): Promise<Profile> {
+export async function getProfile(userId: string): Promise<Profile> {
   const { data, error } = await supabase()
     .from("profile")
     .select("name, currency, base_monthly_salary")
-    .eq("id", 1)
+    .eq("user_id", userId)
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) return { name: "", currency: "INR", baseMonthlySalary: 0 };
@@ -36,20 +36,23 @@ export async function getProfile(): Promise<Profile> {
   };
 }
 
-export async function setProfile(profile: Partial<Profile>): Promise<Profile> {
-  const current = await getProfile();
+export async function setProfile(
+  userId: string,
+  profile: Partial<Profile>
+): Promise<Profile> {
+  const current = await getProfile(userId);
   const next = { ...current, ...profile };
   const { error } = await supabase()
     .from("profile")
     .upsert(
       {
-        id: 1,
+        user_id: userId,
         name: next.name,
         currency: next.currency,
         base_monthly_salary: next.baseMonthlySalary,
         updated_at: new Date().toISOString(),
       },
-      { onConflict: "id" }
+      { onConflict: "user_id" }
     );
   if (error) throw new Error(error.message);
   return next;
@@ -57,10 +60,14 @@ export async function setProfile(profile: Partial<Profile>): Promise<Profile> {
 
 // ---------------- Income ----------------
 
-export async function getIncome(month?: string): Promise<IncomeRow[]> {
+export async function getIncome(
+  userId: string,
+  month?: string
+): Promise<IncomeRow[]> {
   let query = supabase()
     .from("income")
     .select("id, date, type, source, amount, notes")
+    .eq("user_id", userId)
     .order("date", { ascending: false });
   if (month) {
     const start = `${month}-01`;
@@ -79,10 +86,14 @@ export async function getIncome(month?: string): Promise<IncomeRow[]> {
   }));
 }
 
-export async function addIncome(input: Omit<IncomeRow, "id">): Promise<IncomeRow> {
+export async function addIncome(
+  userId: string,
+  input: Omit<IncomeRow, "id">
+): Promise<IncomeRow> {
   const { data, error } = await supabase()
     .from("income")
     .insert({
+      user_id: userId,
       date: input.date,
       type: input.type,
       source: input.source,
@@ -102,18 +113,29 @@ export async function addIncome(input: Omit<IncomeRow, "id">): Promise<IncomeRow
   };
 }
 
-export async function deleteIncome(id: number): Promise<boolean> {
-  const { error, count } = await supabase().from("income").delete().eq("id", id);
+export async function deleteIncome(
+  userId: string,
+  id: number
+): Promise<boolean> {
+  const { error, count } = await supabase()
+    .from("income")
+    .delete()
+    .eq("user_id", userId)
+    .eq("id", id);
   if (error) throw new Error(error.message);
   return (count ?? 0) > 0;
 }
 
 // ---------------- Expenses ----------------
 
-export async function getExpenses(month?: string): Promise<ExpenseRow[]> {
+export async function getExpenses(
+  userId: string,
+  month?: string
+): Promise<ExpenseRow[]> {
   let query = supabase()
     .from("expenses")
     .select("id, date, category, description, amount, type")
+    .eq("user_id", userId)
     .order("date", { ascending: false });
   if (month) {
     const start = `${month}-01`;
@@ -132,10 +154,14 @@ export async function getExpenses(month?: string): Promise<ExpenseRow[]> {
   }));
 }
 
-export async function addExpense(input: Omit<ExpenseRow, "id">): Promise<ExpenseRow> {
+export async function addExpense(
+  userId: string,
+  input: Omit<ExpenseRow, "id">
+): Promise<ExpenseRow> {
   const { data, error } = await supabase()
     .from("expenses")
     .insert({
+      user_id: userId,
       date: input.date,
       category: input.category,
       description: input.description,
@@ -155,18 +181,26 @@ export async function addExpense(input: Omit<ExpenseRow, "id">): Promise<Expense
   };
 }
 
-export async function deleteExpense(id: number): Promise<boolean> {
-  const { error, count } = await supabase().from("expenses").delete().eq("id", id);
+export async function deleteExpense(
+  userId: string,
+  id: number
+): Promise<boolean> {
+  const { error, count } = await supabase()
+    .from("expenses")
+    .delete()
+    .eq("user_id", userId)
+    .eq("id", id);
   if (error) throw new Error(error.message);
   return (count ?? 0) > 0;
 }
 
 // ---------------- Categories ----------------
 
-export async function getCategories(): Promise<Category[]> {
+export async function getCategories(userId: string): Promise<Category[]> {
   const { data, error } = await supabase()
     .from("categories")
     .select("name, monthly_budget")
+    .eq("user_id", userId)
     .order("name", { ascending: true });
   if (error) throw new Error(error.message);
   let list = (data ?? [])
@@ -177,11 +211,12 @@ export async function getCategories(): Promise<Category[]> {
     .filter((c) => c.name);
   if (list.length === 0) {
     for (const name of DEFAULT_CATEGORIES) {
-      await addCategory({ name, monthlyBudget: null });
+      await addCategory(userId, { name, monthlyBudget: null });
     }
     const { data: seeded } = await supabase()
       .from("categories")
       .select("name, monthly_budget")
+      .eq("user_id", userId)
       .order("name", { ascending: true });
     list = (seeded ?? [])
       .map((r) => ({
@@ -193,15 +228,18 @@ export async function getCategories(): Promise<Category[]> {
   return list;
 }
 
-export async function addCategory(input: {
-  name: string;
-  monthlyBudget: number | null;
-}): Promise<Category> {
+export async function addCategory(
+  userId: string,
+  input: {
+    name: string;
+    monthlyBudget: number | null;
+  }
+): Promise<Category> {
   const { error } = await supabase()
     .from("categories")
     .upsert(
-      { name: input.name, monthly_budget: input.monthlyBudget },
-      { onConflict: "name" }
+      { user_id: userId, name: input.name, monthly_budget: input.monthlyBudget },
+      { onConflict: "user_id,name" }
     );
   if (error) throw new Error(error.message);
   return { name: input.name, monthlyBudget: input.monthlyBudget };
@@ -209,10 +247,14 @@ export async function addCategory(input: {
 
 // ---------------- Savings goals ----------------
 
-export async function getSavingsGoal(month: string): Promise<SavingsGoal | null> {
+export async function getSavingsGoal(
+  userId: string,
+  month: string
+): Promise<SavingsGoal | null> {
   const { data, error } = await supabase()
     .from("savings_goals")
     .select("month, target_amount, notes")
+    .eq("user_id", userId)
     .eq("month", month)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -224,16 +266,24 @@ export async function getSavingsGoal(month: string): Promise<SavingsGoal | null>
   };
 }
 
-export async function setSavingsGoal(goal: {
-  month: string;
-  targetAmount: number;
-  notes?: string;
-}): Promise<SavingsGoal> {
+export async function setSavingsGoal(
+  userId: string,
+  goal: {
+    month: string;
+    targetAmount: number;
+    notes?: string;
+  }
+): Promise<SavingsGoal> {
   const { error } = await supabase()
     .from("savings_goals")
     .upsert(
-      { month: goal.month, target_amount: goal.targetAmount, notes: goal.notes ?? "" },
-      { onConflict: "month" }
+      {
+        user_id: userId,
+        month: goal.month,
+        target_amount: goal.targetAmount,
+        notes: goal.notes ?? "",
+      },
+      { onConflict: "user_id,month" }
     );
   if (error) throw new Error(error.message);
   return { month: goal.month, targetAmount: goal.targetAmount, notes: goal.notes ?? "" };
@@ -241,10 +291,13 @@ export async function setSavingsGoal(goal: {
 
 // ---------------- Fixed expenses ----------------
 
-export async function getFixedExpenses(): Promise<FixedExpense[]> {
+export async function getFixedExpenses(
+  userId: string
+): Promise<FixedExpense[]> {
   const { data, error } = await supabase()
     .from("fixed_expenses")
     .select("id, name, amount, due_day, category, active")
+    .eq("user_id", userId)
     .order("due_day", { ascending: true });
   if (error) throw new Error(error.message);
   return (data ?? [])
@@ -260,11 +313,13 @@ export async function getFixedExpenses(): Promise<FixedExpense[]> {
 }
 
 export async function addFixedExpense(
+  userId: string,
   input: Omit<FixedExpense, "id">
 ): Promise<FixedExpense> {
   const { data, error } = await supabase()
     .from("fixed_expenses")
     .insert({
+      user_id: userId,
       name: input.name,
       amount: input.amount,
       due_day: input.dueDay,
@@ -284,10 +339,14 @@ export async function addFixedExpense(
   };
 }
 
-export async function deleteFixedExpense(id: number): Promise<boolean> {
+export async function deleteFixedExpense(
+  userId: string,
+  id: number
+): Promise<boolean> {
   const { error, count } = await supabase()
     .from("fixed_expenses")
     .delete()
+    .eq("user_id", userId)
     .eq("id", id);
   if (error) throw new Error(error.message);
   return (count ?? 0) > 0;
@@ -295,18 +354,21 @@ export async function deleteFixedExpense(id: number): Promise<boolean> {
 
 // ---------------- Fixed → monthly sync ----------------
 
-export async function syncFixedExpensesForMonth(month: string): Promise<number> {
-  const fixed = await getFixedExpenses();
+export async function syncFixedExpensesForMonth(
+  userId: string,
+  month: string
+): Promise<number> {
+  const fixed = await getFixedExpenses(userId);
   const active = fixed.filter((f) => f.active);
   if (active.length === 0) return 0;
-  const expenses = await getExpenses(month);
+  const expenses = await getExpenses(userId, month);
   const existing = new Set(expenses.map((e) => `${e.category}::${e.description}`));
   let added = 0;
   for (const f of active) {
     const key = `${f.category}::${f.name}`;
     if (existing.has(key)) continue;
     const day = Math.min(f.dueDay, daysInMonth(month));
-    await addExpense({
+    await addExpense(userId, {
       date: `${month}-${String(day).padStart(2, "0")}`,
       category: f.category,
       description: f.name,

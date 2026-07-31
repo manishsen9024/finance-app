@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { isAuthenticated } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import { addCategory, getCategories } from "@/lib/db";
 
 const CategoryInput = z.object({
@@ -9,22 +9,20 @@ const CategoryInput = z.object({
 });
 
 export async function GET() {
-  if (!(await isAuthenticated())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  const list = await getCategories();
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const list = await getCategories(user.id);
   return NextResponse.json(list);
 }
 
 export async function POST(req: NextRequest) {
-  if (!(await isAuthenticated())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const body = CategoryInput.safeParse(await req.json().catch(() => ({})));
   if (!body.success) {
     return NextResponse.json({ error: "Invalid category" }, { status: 400 });
   }
-  const category = await addCategory({
+  const category = await addCategory(user.id, {
     name: body.data.name,
     monthlyBudget: body.data.monthlyBudget ?? null,
   });

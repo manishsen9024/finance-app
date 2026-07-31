@@ -11,7 +11,7 @@ Next.js-based personal finance tracker, lightweight, using Supabase as the datab
 | Charts | Recharts | Lightweight, good defaults |
 | State | Server components + API routes | Minimal client state; no Redux overhead |
 | DB | Supabase (Postgres) | Real DB, hosted, free tier, RLS |
-| Auth | Simple password gate (middleware + cookie); password hash stored in Supabase | Personal use only — skip full OAuth flow |
+| Auth | Per-user login (username + SHA-256 password hash in `users` table) + session cookie | Multi-user — each person gets their own account & data |
 | Dates | `date-fns` | Small, tree-shakeable |
 | Validation | `zod` | Validate API inputs server-side |
 | Hosting | Vercel (free tier) — deploy later | Zero-config Next.js deploy |
@@ -27,22 +27,25 @@ SUPABASE_URL=            # e.g. https://gnxpovvgxqffarejrqze.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=  # service role key (secret, server-side only)
 ```
 
-The password gate's password is NOT in env. Only its SHA-256 hash lives in the
-`app_config` table; set/change it with `npm run set-password -- <password>`.
+The password gate is gone. Each user logs in with a username + password
+(SHA-256 hash stored in the `users` table) and sees only their own data —
+every data table is scoped by `user_id`. Create accounts from the login page
+or with `npm run add-user -- <username> <password>`.
 
 ## 2. Supabase Tables
 
-### `app_config`
+### `users`
 | Column | Type |
 |---|---|
-| id | bigint PK (always 1) |
-| password_hash | text (SHA-256 of gate password) |
-| updated_at | timestamptz |
+| id | uuid PK |
+| username | text unique |
+| password_hash | text (SHA-256 of password) |
+| created_at | timestamptz |
 
 ### `profile`
 | Column | Type |
 |---|---|
-| id | bigint PK (always 1) |
+| user_id | uuid PK (FK → users) |
 | name | text |
 | currency | text |
 | base_monthly_salary | numeric |
@@ -52,6 +55,7 @@ The password gate's password is NOT in env. Only its SHA-256 hash lives in the
 | Column | Type |
 |---|---|
 | id | bigint PK |
+| user_id | uuid FK → users |
 | date | date |
 | type | text (Salary/Extra) |
 | source | text |
@@ -63,6 +67,7 @@ The password gate's password is NOT in env. Only its SHA-256 hash lives in the
 | Column | Type |
 |---|---|
 | id | bigint PK |
+| user_id | uuid FK → users |
 | date | date |
 | category | text |
 | description | text |
@@ -73,20 +78,25 @@ The password gate's password is NOT in env. Only its SHA-256 hash lives in the
 ### `categories`
 | Column | Type |
 |---|---|
-| name | text PK |
+| user_id | uuid FK → users |
+| name | text |
 | monthly_budget | numeric null |
+| PK | (user_id, name) |
 
 ### `savings_goals`
 | Column | Type |
 |---|---|
-| month | text PK (YYYY-MM) |
+| user_id | uuid FK → users |
+| month | text (YYYY-MM) |
 | target_amount | numeric |
 | notes | text |
+| PK | (user_id, month) |
 
 ### `fixed_expenses`
 | Column | Type |
 |---|---|
 | id | bigint PK |
+| user_id | uuid FK → users |
 | name | text |
 | amount | numeric |
 | due_day | int |
@@ -183,6 +193,6 @@ All Supabase calls happen **server-side only**, via API routes.
 ## Next Steps
 
 1. Resume the Supabase project if paused (Dashboard → select project → Resume project).
-2. Apply the migrations in `supabase/migrations/` in the SQL editor (or via CLI).
-3. Drop credentials into `.env.local` (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`), then run `npm run set-password -- <password>` to set the gate password.
-4. Build the app (phases above).
+2. Apply the migrations in `supabase/migrations/` (SQL editor or CLI).
+3. Drop credentials into `.env.local` (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`).
+4. Create accounts from the login page, or `npm run add-user -- <username> <password>`.

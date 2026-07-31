@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { SESSION_COOKIE, sessionToken } from "@/lib/auth";
+import { SESSION_COOKIE, USER_COOKIE, resolveSession } from "@/lib/auth";
 
 export default async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -11,7 +11,10 @@ export default async function proxy(req: NextRequest) {
     /\.[a-zA-Z0-9]+$/.test(pathname);
   if (isStatic) return NextResponse.next();
 
-  const authed = req.cookies.get(SESSION_COOKIE)?.value === (await sessionToken());
+  const authed = !!(await resolveSession(
+    req.cookies.get(USER_COOKIE)?.value ?? "",
+    req.cookies.get(SESSION_COOKIE)?.value ?? ""
+  ));
 
   if (pathname === "/login") {
     if (authed) return NextResponse.redirect(new URL("/dashboard", req.nextUrl));

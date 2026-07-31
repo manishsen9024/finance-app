@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAuthenticated } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import {
   categoryBreakdown,
   currentMonth,
@@ -19,20 +19,19 @@ import {
 import type { Summary } from "@/lib/types";
 
 export async function GET(req: NextRequest) {
-  if (!(await isAuthenticated())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const month = req.nextUrl.searchParams.get("month") || currentMonth();
   if (month === currentMonth()) {
-    await syncFixedExpensesForMonth(month);
+    await syncFixedExpensesForMonth(user.id, month);
   }
 
   const [profile, incomeAll, expensesAll, goal, categories] = await Promise.all([
-    getProfile(),
-    getIncome(),
-    getExpenses(),
-    getSavingsGoal(month),
-    getCategories(),
+    getProfile(user.id),
+    getIncome(user.id),
+    getExpenses(user.id),
+    getSavingsGoal(user.id, month),
+    getCategories(user.id),
   ]);
 
   const income = incomeAll.filter((i) => i.date.startsWith(month));

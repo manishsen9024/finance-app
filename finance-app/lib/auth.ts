@@ -2,9 +2,18 @@ import { cookies } from "next/headers";
 import { supabase } from "./supabase";
 
 export const SESSION_COOKIE = "finance_session";
+export const USER_COOKIE = "finance_user";
 
-let cachedHash: { value: string; at: number } | null = null;
-const CACHE_TTL_MS = 30_000;
+export interface AuthUser {
+  id: string;
+  username: string;
+}
+
+export interface UserRecord {
+  id: string;
+  username: string;
+  passwordHash: string;
+}
 
 export async function sha256Hex(input: string): Promise<string> {
   const data = new TextEncoder().encode(input);
@@ -14,26 +23,46 @@ export async function sha256Hex(input: string): Promise<string> {
     .join("");
 }
 
-export async function getPasswordHash(): Promise<string> {
-  if (cachedHash && Date.now() - cachedHash.at < CACHE_TTL_MS) {
-    return cachedHash.value;
-  }
+export async function findUserByUsername(
+  username: string
+): Promise<UserRecord | null> {
   const { data, error } = await supabase()
-    .from("app_config")
-    .select("password_hash")
-    .eq("id", 1)
+    .from("users")
+    .select("id, username, password_hash")
+    .eq("username", username)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  const value = String(data?.password_hash ?? "");
-  cachedHash = { value, at: Date.now() };
-  return value;
+  if (!data) return null;
+  return {
+    id: String(data.id),
+    username: String(data.username ?? ""),
+    passwordHash: String(data.password_hash ?? ""),
+  };
 }
 
-export async function sessionToken(): Promise<string> {
-  return sha256Hex(`finance-app:${await getPasswordHash()}`);
+export function userSessionToken(user: UserRecord): Promise<string> {
+  return sha256Hex(`finance-app:${user.id}:${user.username}:${user.passwordHash}`);
+}
+
+export async function resolveSession(
+  username: string,
+  token: string
+): Promise<AuthUser | null> {
+  if (!username || !token) return null;
+  const user = await findUserByUsername(username);
+  if (!user) return null;
+  if ((await userSessionToken(user)) !== token) return null;
+  return { id: user.id, username: user.username };
+}
+
+export async function getCurrentUser(): Promise<AuthUser | null> {
+  const store = await cookies();
+  return resolveSession(
+    store.get(USER_COOKIE)?.value ?? "",
+    store.get(SESSION_COOKIE)?.value ?? ""
+  );
 }
 
 export async function isAuthenticated(): Promise<boolean> {
-  const token = (await cookies()).get(SESSION_COOKIE)?.value;
-  return !!token && token === (await sessionToken());
+  return (await getCurrentUser()) !== null;
 }
