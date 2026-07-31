@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { api } from "@/lib/api";
+import { toast } from "@/lib/toast";
 
 export default function CategoryForm({ onAdded }: { onAdded: () => void }) {
   const [name, setName] = useState("");
@@ -23,6 +24,7 @@ export default function CategoryForm({ onAdded }: { onAdded: () => void }) {
       });
       setName("");
       setBudget("");
+      toast("Category added 🗂️");
       onAdded();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add category");
@@ -32,8 +34,10 @@ export default function CategoryForm({ onAdded }: { onAdded: () => void }) {
   };
 
   return (
-    <form onSubmit={submit} className="card space-y-3">
-      <h2 className="text-sm font-semibold text-slate-700">Add category</h2>
+    <form onSubmit={submit} className="card space-y-4">
+      <h2 className="flex items-center gap-2 text-sm font-bold text-slate-800">
+        🗂️ Add category
+      </h2>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="label" htmlFor="cat-name">Name</label>

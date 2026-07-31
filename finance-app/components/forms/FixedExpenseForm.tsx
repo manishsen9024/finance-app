@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { api } from "@/lib/api";
+import { categoryEmoji } from "@/lib/constants";
+import { toast } from "@/lib/toast";
 
 export default function FixedExpenseForm({
   categories,
@@ -35,6 +37,7 @@ export default function FixedExpenseForm({
       setName("");
       setAmount("");
       setDueDay("1");
+      toast("Fixed expense added 🔁");
       onChanged();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add fixed expense");
@@ -44,11 +47,11 @@ export default function FixedExpenseForm({
   };
 
   return (
-    <form onSubmit={submit} className="card space-y-3">
-      <h2 className="text-sm font-semibold text-slate-700">
-        Add fixed expense
+    <form onSubmit={submit} className="card space-y-4">
+      <h2 className="flex items-center gap-2 text-sm font-bold text-slate-800">
+        🔁 Add fixed expense
       </h2>
-      <p className="text-xs text-slate-400">
+      <p className="rounded-2xl bg-indigo-50 px-3 py-2 text-xs text-indigo-500">
         Rent, subscriptions, bills — these auto-fill into expenses on their due day each month.
       </p>
       <div className="grid grid-cols-2 gap-3">
@@ -96,21 +99,19 @@ export default function FixedExpenseForm({
           />
         </div>
         <div>
-          <label className="label" htmlFor="fx-category">Category</label>
-          <input
-            id="fx-category"
-            type="text"
-            list="category-list"
-            required
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="input"
-          />
-          <datalist id="category-list">
-            {categories.map((c) => (
-              <option key={c} value={c} />
+          <span className="label">Category</span>
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {categories.slice(0, 6).map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setCategory(c)}
+                className={`chip ${category === c ? "chip-active" : "chip-idle"}`}
+              >
+                {categoryEmoji(c)} {c}
+              </button>
             ))}
-          </datalist>
+          </div>
         </div>
       </div>
       {error && <p className="text-xs font-medium text-red-500">{error}</p>}

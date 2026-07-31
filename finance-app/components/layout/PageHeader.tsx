@@ -8,19 +8,24 @@ export default function PageHeader({
   month,
   onMonthChange,
   action,
+  emoji,
 }: {
   title: string;
   subtitle?: string;
   month?: string;
   onMonthChange?: (month: string) => void;
   action?: React.ReactNode;
+  emoji?: string;
 }) {
   return (
-    <div className="mb-4 space-y-3">
-      <div className="flex items-start justify-between gap-2">
+    <div className="mb-5 space-y-3">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">{title}</h1>
-          {subtitle && <p className="text-xs text-slate-400">{subtitle}</p>}
+          <h1 className="flex items-center gap-2 text-2xl font-extrabold tracking-tight text-slate-900">
+            {emoji && <span>{emoji}</span>}
+            {title}
+          </h1>
+          {subtitle && <p className="mt-0.5 text-sm text-slate-400">{subtitle}</p>}
         </div>
         {action}
       </div>

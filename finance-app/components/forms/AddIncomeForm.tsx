@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { api } from "@/lib/api";
 import { todayKey } from "@/lib/calculations";
+import { toast } from "@/lib/toast";
 import type { Profile } from "@/lib/types";
 
 export default function AddIncomeForm({
@@ -38,6 +39,7 @@ export default function AddIncomeForm({
       setSource("");
       setAmount("");
       setNotes("");
+      toast(type === "Salary" ? "Salary recorded 💼" : "Extra income added ✨");
       onAdded();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add income");
@@ -47,8 +49,38 @@ export default function AddIncomeForm({
   };
 
   return (
-    <form onSubmit={submit} className="card space-y-3">
-      <h2 className="text-sm font-semibold text-slate-700">Add income</h2>
+    <form onSubmit={submit} className="card space-y-4">
+      <h2 className="flex items-center gap-2 text-sm font-bold text-slate-800">
+        💰 Add income
+      </h2>
+
+      <div>
+        <span className="label">Type</span>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setType("Salary")}
+            className={`rounded-2xl border px-3 py-2.5 text-sm font-bold transition active:scale-95 ${
+              type === "Salary"
+                ? "border-transparent bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-sm"
+                : "border-slate-200 bg-white text-slate-500"
+            }`}
+          >
+            💼 Salary
+          </button>
+          <button
+            type="button"
+            onClick={() => setType("Extra")}
+            className={`rounded-2xl border px-3 py-2.5 text-sm font-bold transition active:scale-95 ${
+              type === "Extra"
+                ? "border-transparent bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-sm"
+                : "border-slate-200 bg-white text-slate-500"
+            }`}
+          >
+            ✨ Extra
+          </button>
+        </div>
+      </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -62,21 +94,6 @@ export default function AddIncomeForm({
             className="input"
           />
         </div>
-        <div>
-          <label className="label" htmlFor="inc-type">Type</label>
-          <select
-            id="inc-type"
-            value={type}
-            onChange={(e) => setType(e.target.value as "Salary" | "Extra")}
-            className="input"
-          >
-            <option value="Salary">Salary</option>
-            <option value="Extra">Extra</option>
-          </select>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="label" htmlFor="inc-amount">Amount</label>
           <input
@@ -97,6 +114,9 @@ export default function AddIncomeForm({
             </p>
           ) : null}
         </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="label" htmlFor="inc-source">Source</label>
           <input
@@ -108,18 +128,17 @@ export default function AddIncomeForm({
             className="input"
           />
         </div>
-      </div>
-
-      <div>
-        <label className="label" htmlFor="inc-notes">Notes</label>
-        <input
-          id="inc-notes"
-          type="text"
-          placeholder="Optional"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          className="input"
-        />
+        <div>
+          <label className="label" htmlFor="inc-notes">Notes</label>
+          <input
+            id="inc-notes"
+            type="text"
+            placeholder="Optional"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            className="input"
+          />
+        </div>
       </div>
 
       {error && <p className="text-xs font-medium text-red-500">{error}</p>}

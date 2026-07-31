@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { api } from "@/lib/api";
+import { toast } from "@/lib/toast";
 import type { SavingsGoal } from "@/lib/types";
 
 export default function GoalForm({
@@ -17,19 +18,17 @@ export default function GoalForm({
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [saved, setSaved] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     setError("");
-    setSaved(false);
     try {
       await api("/api/savings", {
         method: "POST",
         body: JSON.stringify({ month, targetAmount: Number(target), notes: notes.trim() }),
       });
-      setSaved(true);
+      toast(initial ? "Goal updated 🎯" : "Goal set 🎯");
       onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save goal");
@@ -39,9 +38,9 @@ export default function GoalForm({
   };
 
   return (
-    <form onSubmit={submit} className="card space-y-3">
-      <h2 className="text-sm font-semibold text-slate-700">
-        {initial ? "Update savings goal" : "Set savings goal"}
+    <form onSubmit={submit} className="card space-y-4">
+      <h2 className="flex items-center gap-2 text-sm font-bold text-slate-800">
+        🐷 {initial ? "Update savings goal" : "Set savings goal"}
       </h2>
       <div>
         <label className="label" htmlFor="goal-amount">Target to save this month</label>
@@ -70,7 +69,6 @@ export default function GoalForm({
         />
       </div>
       {error && <p className="text-xs font-medium text-red-500">{error}</p>}
-      {saved && <p className="text-xs font-medium text-green-600">Goal saved</p>}
       <button type="submit" disabled={busy} className="btn-primary">
         {busy ? "Saving…" : "Save goal"}
       </button>

@@ -3,11 +3,11 @@
 import { money } from "@/lib/format";
 import type { SavingsStatus } from "@/lib/types";
 
-const STATUS: Record<SavingsStatus, { label: string; color: string; hint: string }> = {
-  "no-goal": { label: "No goal", color: "#94a3b8", hint: "Set a savings target for this month" },
-  exceeded: { label: "Goal exceeded!", color: "#22c55e", hint: "You beat your savings target" },
-  "on-track": { label: "On track", color: "#22c55e", hint: "Your savings pace meets the goal" },
-  "at-risk": { label: "At risk", color: "#f59e0b", hint: "Spending pace may miss the goal" },
+const STATUS: Record<SavingsStatus, { label: string; emoji: string; color: string; hint: string }> = {
+  "no-goal": { label: "No goal", emoji: "🎯", color: "#94a3b8", hint: "Set a savings target for this month" },
+  exceeded: { label: "Goal exceeded!", emoji: "🎉", color: "#22c55e", hint: "You beat your savings target 🎉" },
+  "on-track": { label: "On track", emoji: "✅", color: "#22c55e", hint: "Your savings pace meets the goal" },
+  "at-risk": { label: "At risk", emoji: "⚠️", color: "#f59e0b", hint: "Spending pace may miss the goal" },
 };
 
 export default function SavingsGauge({
@@ -23,7 +23,7 @@ export default function SavingsGauge({
   status: SavingsStatus;
   currency: string;
 }) {
-  const { label, color, hint } = STATUS[status];
+  const { label, emoji, color, hint } = STATUS[status];
   const radius = 80;
   const circumference = 2 * Math.PI * radius;
   const clamped = Math.max(0, Math.min(100, pct));
@@ -32,45 +32,35 @@ export default function SavingsGauge({
   return (
     <div className="flex flex-col items-center gap-2">
       <div className="relative">
-        <svg width="190" height="190" viewBox="0 0 190 190">
+        <svg width="200" height="200" viewBox="0 0 200 200">
+          <defs>
+            <linearGradient id="gaugeGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#22c55e" />
+              <stop offset="100%" stopColor="#6366f1" />
+            </linearGradient>
+          </defs>
+          <circle cx="100" cy="100" r={radius} fill="none" strokeWidth="16" className="stroke-slate-200" />
           <circle
-            cx="95"
-            cy="95"
+            cx="100"
+            cy="100"
             r={radius}
             fill="none"
-            strokeWidth="14"
-            className="stroke-slate-200"
-          />
-          <circle
-            cx="95"
-            cy="95"
-            r={radius}
-            fill="none"
-            strokeWidth="14"
+            strokeWidth="16"
             strokeLinecap="round"
-            stroke={color}
+            stroke={status === "no-goal" ? color : "url(#gaugeGrad)"}
             strokeDasharray={`${dash} ${circumference - dash}`}
-            transform="rotate(-90 95 95)"
+            transform="rotate(-90 100 100)"
+            style={{ transition: "stroke-dasharray 0.8s cubic-bezier(0.22, 0.68, 0.36, 1)" }}
           />
-          <text
-            x="95"
-            y="90"
-            textAnchor="middle"
-            className="fill-slate-900 text-3xl font-bold"
-          >
+          <text x="100" y="94" textAnchor="middle" className="fill-slate-900 text-4xl font-extrabold">
             {Math.round(pct)}%
           </text>
-          <text
-            x="95"
-            y="112"
-            textAnchor="middle"
-            className="fill-slate-500 text-xs"
-          >
-            {label}
+          <text x="100" y="120" textAnchor="middle" className="fill-slate-500 text-sm font-semibold">
+            {emoji} {label}
           </text>
         </svg>
       </div>
-      <p className="text-sm font-semibold text-slate-700">
+      <p className="text-sm font-bold text-slate-700">
         {money(saved, currency)}{" "}
         <span className="font-normal text-slate-400">of {money(target, currency)} saved</span>
       </p>

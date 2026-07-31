@@ -7,6 +7,7 @@ import FixedExpenseForm from "@/components/forms/FixedExpenseForm";
 import CategoryForm from "@/components/forms/CategoryForm";
 import { api } from "@/lib/api";
 import { currentMonth, monthLabel } from "@/lib/calculations";
+import { categoryEmoji } from "@/lib/constants";
 import { money } from "@/lib/format";
 import type { Category, ExpenseRow, FixedExpense } from "@/lib/types";
 
@@ -40,6 +41,12 @@ export default function ExpensesPage() {
     };
   }, [month, tick]);
 
+  useEffect(() => {
+    const handler = () => setTick((t) => t + 1);
+    window.addEventListener("data-changed", handler);
+    return () => window.removeEventListener("data-changed", handler);
+  }, []);
+
   const loading = loadedFor !== month;
   const load = () => setTick((t) => t + 1);
 
@@ -65,6 +72,7 @@ export default function ExpensesPage() {
         subtitle={monthLabel(month)}
         month={month}
         onMonthChange={setMonth}
+        emoji="🧾"
       />
 
       <div className="space-y-4">
@@ -72,8 +80,8 @@ export default function ExpensesPage() {
 
         <div className="card">
           <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-700">Entries</h2>
-            <span className="text-sm font-bold text-red-600">
+            <h2 className="text-sm font-bold text-slate-800">📋 Entries</h2>
+            <span className="rounded-full bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-600">
               {money(total)}
             </span>
           </div>
@@ -85,14 +93,17 @@ export default function ExpensesPage() {
             <ul className="divide-y divide-slate-100">
               {rows.map((r) => (
                 <li key={r.id} className="flex items-center gap-3 py-2.5">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-400 to-pink-500 text-lg shadow-sm">
+                    {categoryEmoji(r.category)}
+                  </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <p className="truncate text-sm font-medium text-slate-800">
                         {r.description}
                       </p>
                       {r.type === "Fixed" && (
-                        <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
-                          Fixed
+                        <span className="shrink-0 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-500">
+                          🔁 Fixed
                         </span>
                       )}
                     </div>
@@ -120,9 +131,7 @@ export default function ExpensesPage() {
 
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-700">
-              Fixed expenses
-            </h2>
+            <h2 className="text-sm font-bold text-slate-800">🔁 Fixed expenses</h2>
             <span className="text-xs text-slate-400">
               {fixed.filter((f) => f.active).length} active
             </span>
@@ -133,19 +142,18 @@ export default function ExpensesPage() {
               {fixed.map((f) => (
                 <li
                   key={f.id}
-                  className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2.5"
+                  className="tile flex items-center gap-3 px-3 py-2.5"
                 >
-                  <span
-                    className={`h-2.5 w-2.5 shrink-0 rounded-full ${
-                      f.active ? "bg-green-500" : "bg-slate-300"
-                    }`}
-                  />
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-lg">
+                    {categoryEmoji(f.category)}
+                  </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-slate-800">
-                      {f.name}
-                    </p>
+                    <p className="truncate text-sm font-medium text-slate-800">{f.name}</p>
                     <p className="text-xs text-slate-400">
-                      Day {f.dueDay} · {f.category}
+                      Day {f.dueDay} · {f.category} ·{" "}
+                      <span className={f.active ? "font-semibold text-emerald-600" : "text-slate-400"}>
+                        {f.active ? "Active" : "Paused"}
+                      </span>
                     </p>
                   </div>
                   <span className="text-sm font-semibold text-slate-700">
@@ -168,7 +176,7 @@ export default function ExpensesPage() {
 
         <div>
           <div className="mb-2">
-            <h2 className="text-sm font-semibold text-slate-700">Categories</h2>
+            <h2 className="text-sm font-bold text-slate-800">🗂️ Categories</h2>
           </div>
           <CategoryForm onAdded={load} />
           {categories.length > 0 && (
@@ -176,9 +184,12 @@ export default function ExpensesPage() {
               {categories.map((c) => (
                 <li
                   key={c.name}
-                  className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm"
+                  className="tile flex items-center justify-between px-3 py-2.5 text-sm"
                 >
-                  <span className="font-medium text-slate-700">{c.name}</span>
+                  <span className="flex items-center gap-2 font-medium text-slate-700">
+                    <span className="text-lg">{categoryEmoji(c.name)}</span>
+                    {c.name}
+                  </span>
                   <span className="text-xs text-slate-400">
                     {c.monthlyBudget !== null ? `Budget ${money(c.monthlyBudget)}` : "No budget"}
                   </span>

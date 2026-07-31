@@ -8,11 +8,11 @@ const COLORS = [
   "#6366f1",
   "#22c55e",
   "#f59e0b",
-  "#ef4444",
+  "#f43f5e",
   "#06b6d4",
   "#a855f7",
   "#84cc16",
-  "#f97316",
+  "#fb923c",
   "#e11d48",
   "#0ea5e9",
 ];
@@ -31,20 +31,21 @@ export default function CategoryPieChart({
           data={data}
           dataKey="amount"
           nameKey="name"
-          innerRadius={55}
-          outerRadius={90}
-          paddingAngle={2}
+          innerRadius={58}
+          outerRadius={92}
+          paddingAngle={3}
           stroke="none"
+          cornerRadius={6}
         >
           {data.map((_, i) => (
             <Cell key={i} fill={COLORS[i % COLORS.length]} />
           ))}
         </Pie>
         <Tooltip
-          formatter={(value) => money(Number(value ?? 0), currency)}
-          contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12 }}
+          formatter={(value, name) => [money(Number(value ?? 0), currency), String(name)]}
+          contentStyle={{ borderRadius: 16, border: "1px solid #e2e8f0", boxShadow: "0 12px 32px -12px rgba(79,70,229,0.3)", fontSize: 12, fontWeight: 600 }}
         />
-        <Legend wrapperStyle={{ fontSize: 12 }} />
+        <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} />
       </PieChart>
     </ResponsiveContainer>
   );

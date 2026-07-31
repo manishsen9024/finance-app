@@ -35,6 +35,12 @@ export default function IncomePage() {
     };
   }, [month, tick]);
 
+  useEffect(() => {
+    const handler = () => setTick((t) => t + 1);
+    window.addEventListener("data-changed", handler);
+    return () => window.removeEventListener("data-changed", handler);
+  }, []);
+
   const loading = loadedFor !== month;
   const load = () => setTick((t) => t + 1);
 
@@ -53,6 +59,7 @@ export default function IncomePage() {
         subtitle={monthLabel(month)}
         month={month}
         onMonthChange={setMonth}
+        emoji="💰"
       />
 
       <div className="space-y-4">
@@ -60,8 +67,8 @@ export default function IncomePage() {
 
         <div className="card">
           <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-700">Entries</h2>
-            <span className="text-sm font-bold text-green-600">
+            <h2 className="text-sm font-bold text-slate-800">📋 Entries</h2>
+            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-600">
               {money(total, profile?.currency)}
             </span>
           </div>
@@ -73,25 +80,17 @@ export default function IncomePage() {
             <ul className="divide-y divide-slate-100">
               {rows.map((r) => (
                 <li key={r.id} className="flex items-center gap-3 py-2.5">
-                  <span
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold ${
-                      r.type === "Salary"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-indigo-100 text-indigo-700"
-                    }`}
-                  >
-                    {r.type === "Salary" ? "S" : "E"}
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 text-lg shadow-sm">
+                    {r.type === "Salary" ? "💼" : "✨"}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-slate-800">
-                      {r.source}
-                    </p>
+                    <p className="truncate text-sm font-medium text-slate-800">{r.source}</p>
                     <p className="text-xs text-slate-400">
                       {r.date} {r.type === "Extra" ? "· Extra" : ""}
                       {r.notes ? ` · ${r.notes}` : ""}
                     </p>
                   </div>
-                  <span className="text-sm font-bold text-green-600">
+                  <span className="text-sm font-bold text-emerald-600">
                     +{money(r.amount, profile?.currency)}
                   </span>
                   <button

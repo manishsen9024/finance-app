@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { api } from "@/lib/api";
 import { todayKey } from "@/lib/calculations";
+import { categoryEmoji } from "@/lib/constants";
+import { toast } from "@/lib/toast";
 import type { ExpenseType } from "@/lib/types";
 
 export default function AddExpenseForm({
@@ -37,6 +39,7 @@ export default function AddExpenseForm({
       });
       setDescription("");
       setAmount("");
+      toast("Expense added 💸");
       onAdded();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add expense");
@@ -46,8 +49,10 @@ export default function AddExpenseForm({
   };
 
   return (
-    <form onSubmit={submit} className="card space-y-3">
-      <h2 className="text-sm font-semibold text-slate-700">Add expense</h2>
+    <form onSubmit={submit} className="card space-y-4">
+      <h2 className="flex items-center gap-2 text-sm font-bold text-slate-800">
+        🧾 Add expense
+      </h2>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -79,16 +84,26 @@ export default function AddExpenseForm({
       </div>
 
       <div>
-        <label className="label" htmlFor="exp-category">Category</label>
+        <span className="label">Category</span>
+        <div className="flex flex-wrap gap-1.5">
+          {categories.map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => setCategory(c)}
+              className={`chip ${category === c ? "chip-active" : "chip-idle"}`}
+            >
+              {categoryEmoji(c)} {c}
+            </button>
+          ))}
+        </div>
         <input
-          id="exp-category"
           type="text"
           list="category-list"
-          required
-          placeholder="Pick or type a category"
+          placeholder="Or type a custom category…"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          className="input"
+          className="input mt-2"
         />
         <datalist id="category-list">
           {categories.map((c) => (
@@ -115,24 +130,24 @@ export default function AddExpenseForm({
           <button
             type="button"
             onClick={() => setType("Variable")}
-            className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
+            className={`rounded-2xl border px-3 py-2.5 text-sm font-bold transition active:scale-95 ${
               type === "Variable"
-                ? "border-indigo-500 bg-indigo-50 text-indigo-600"
-                : "border-slate-200 text-slate-500"
+                ? "border-transparent bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-sm"
+                : "border-slate-200 bg-white text-slate-500"
             }`}
           >
-            One-off
+            🎯 One-off
           </button>
           <button
             type="button"
             onClick={() => setType("Fixed")}
-            className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
+            className={`rounded-2xl border px-3 py-2.5 text-sm font-bold transition active:scale-95 ${
               type === "Fixed"
-                ? "border-indigo-500 bg-indigo-50 text-indigo-600"
-                : "border-slate-200 text-slate-500"
+                ? "border-transparent bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-sm"
+                : "border-slate-200 bg-white text-slate-500"
             }`}
           >
-            Fixed
+            🔁 Fixed
           </button>
         </div>
       </div>

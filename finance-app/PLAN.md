@@ -11,7 +11,7 @@ Next.js-based personal finance tracker, lightweight, using Supabase as the datab
 | Charts | Recharts | Lightweight, good defaults |
 | State | Server components + API routes | Minimal client state; no Redux overhead |
 | DB | Supabase (Postgres) | Real DB, hosted, free tier, RLS |
-| Auth | Simple password gate (middleware + cookie) | Personal use only — skip full OAuth flow |
+| Auth | Simple password gate (middleware + cookie); password hash stored in Supabase | Personal use only — skip full OAuth flow |
 | Dates | `date-fns` | Small, tree-shakeable |
 | Validation | `zod` | Validate API inputs server-side |
 | Hosting | Vercel (free tier) — deploy later | Zero-config Next.js deploy |
@@ -23,12 +23,21 @@ Next.js-based personal finance tracker, lightweight, using Supabase as the datab
 
 ### Environment variables
 ```
-APP_PASSWORD=            # password gate (plain text, personal use)
 SUPABASE_URL=            # e.g. https://gnxpovvgxqffarejrqze.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=  # service role key (secret, server-side only)
 ```
 
+The password gate's password is NOT in env. Only its SHA-256 hash lives in the
+`app_config` table; set/change it with `npm run set-password -- <password>`.
+
 ## 2. Supabase Tables
+
+### `app_config`
+| Column | Type |
+|---|---|
+| id | bigint PK (always 1) |
+| password_hash | text (SHA-256 of gate password) |
+| updated_at | timestamptz |
 
 ### `profile`
 | Column | Type |
@@ -174,6 +183,6 @@ All Supabase calls happen **server-side only**, via API routes.
 ## Next Steps
 
 1. Resume the Supabase project if paused (Dashboard → select project → Resume project).
-2. Apply `supabase/migrations/20260731000000_init.sql` in the SQL editor (or via CLI).
-3. Drop credentials into `.env.local` (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `APP_PASSWORD`).
+2. Apply the migrations in `supabase/migrations/` in the SQL editor (or via CLI).
+3. Drop credentials into `.env.local` (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`), then run `npm run set-password -- <password>` to set the gate password.
 4. Build the app (phases above).

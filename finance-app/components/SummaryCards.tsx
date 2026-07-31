@@ -7,32 +7,27 @@ export default function SummaryCards({ summary }: { summary: Summary }) {
   const { profile, totalIncome, totalExpense, netSaved } = summary;
   const c = profile.currency;
 
+  const tiles = [
+    { label: "Income", emoji: "💵", value: money(totalIncome, c) },
+    { label: "Spent", emoji: "💸", value: money(totalExpense, c) },
+    { label: "Saved", emoji: "🐷", value: money(netSaved, c), negative: netSaved < 0 },
+  ];
+
   return (
-    <div className="grid grid-cols-3 gap-2">
-      <div className="rounded-2xl border border-slate-200 bg-white p-3">
-        <p className="text-[11px] font-medium text-slate-400">Income</p>
-        <p className="mt-0.5 truncate text-base font-bold text-green-600">
-          {money(totalIncome, c)}
-        </p>
-      </div>
-      <div className="rounded-2xl border border-slate-200 bg-white p-3">
-        <p className="text-[11px] font-medium text-slate-400">Spent</p>
-        <p className="mt-0.5 truncate text-base font-bold text-red-600">
-          {money(totalExpense, c)}
-        </p>
-      </div>
-      <div className="rounded-2xl border border-slate-200 bg-white p-3">
-        <p className="text-[11px] font-medium text-slate-400">Saved</p>
-        <p
-          className={`mt-0.5 truncate text-base font-bold ${
-            netSaved >= 0
-              ? "text-indigo-600"
-              : "text-red-600"
-          }`}
-        >
-          {money(netSaved, c)}
-        </p>
-      </div>
+    <div className="grid grid-cols-3 gap-2.5">
+      {tiles.map((t) => (
+        <div key={t.label} className="tile p-3">
+          <span className="text-xl">{t.emoji}</span>
+          <p className="mt-1 text-[11px] font-bold text-slate-400">{t.label}</p>
+          <p
+            className={`mt-0.5 truncate text-sm font-extrabold tabular-nums ${
+              t.negative ? "text-rose-600" : "text-slate-800"
+            }`}
+          >
+            {t.value}
+          </p>
+        </div>
+      ))}
     </div>
   );
 }
